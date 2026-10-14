@@ -25,9 +25,9 @@ import (
 )
 
 // splitOversizedChunks splits chunks whose estimated token count exceeds
-// maxTokens into smaller sub-chunks, splitting overlong lines on rune boundaries.
-// Chunks under the
-// limit pass through unchanged. Token count is estimated as len(content)/4,
+// maxTokens into smaller sub-chunks at line boundaries; a single line longer
+// than the budget is cut on rune boundaries. Chunks under the limit pass
+// through unchanged. Token count is estimated as len(content)/4,
 // with additional budget reserved for the filepath prefix prepended during
 // embedding ("// " + filePath + "\n").
 func splitOversizedChunks(chunks []chunker.Chunk, maxTokens int) []chunker.Chunk {

@@ -662,6 +662,29 @@ func TestSplitOversizedChunks_WhitespaceCut(t *testing.T) {
 	}
 }
 
+func TestSplitOversizedChunks_BudgetSmallerThanRune(t *testing.T) {
+	// Budget clamped to 1 byte; the 4-byte rune cannot be split further, so
+	// each piece is exactly one whole rune even though it exceeds the byte
+	// budget. Rune integrity wins over the byte budget in this case only.
+	c := makeTestChunk("Emoji", 1, 1, "😀😀")
+	pieces := splitOversizedChunks([]chunker.Chunk{c}, 1)
+	if len(pieces) != 2 {
+		t.Fatalf("expected 2 pieces, got %d", len(pieces))
+	}
+	for i, piece := range pieces {
+		if !utf8.ValidString(piece.Content) {
+			t.Fatalf("piece %d is not valid UTF-8", i)
+		}
+		if utf8.RuneCountInString(piece.Content) != 1 {
+			t.Fatalf("piece %d: expected exactly one rune, got %d", i, utf8.RuneCountInString(piece.Content))
+		}
+	}
+	joined := pieces[0].Content + pieces[1].Content
+	if joined != c.Content {
+		t.Fatalf("pieces do not reproduce content: %q", joined)
+	}
+}
+
 func TestSplitOversizedChunks_BoundaryRemainderFits(t *testing.T) {
 	content := strings.Repeat("a", 100) + "\n\n" + strings.Repeat("b", 100) + "\n" + strings.Repeat("c", 300) + "\n"
 	c := makeTestChunk("Boundary", 1, 4, content)
